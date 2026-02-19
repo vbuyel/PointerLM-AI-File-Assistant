@@ -96,8 +96,8 @@ class TransformersAIService(AbstractAIService):
         response = self.client.chat.completions.create(
             model=self.MODEL_ID,
             messages=self.messages,
-            temperature=0.5,
-            max_tokens=512,
+            temperature=0.7,
+            max_tokens=1024,
         )
         
         # with OpenRouter(api_key=os.environ.get("MODEL_API_KEY")) as client:
