@@ -17,3 +17,5 @@ sentence-transformers
 faiss-cpu
 numpy
 python-multipart
+langchain_community
+ddgs

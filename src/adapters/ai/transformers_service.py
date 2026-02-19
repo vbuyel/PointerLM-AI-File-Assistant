@@ -8,6 +8,7 @@ from src.adapters.ai.ai_service import AbstractAIService
 from langchain_text_splitters import CharacterTextSplitter
 
 from openai import OpenAI
+from langchain_community.tools import DuckDuckGoSearchRun
 # from openrouter import OpenRouter
 # from langchain.messages import AIMessage, HumanMessage, SystemMessage
 
@@ -25,13 +26,13 @@ class TransformersAIService(AbstractAIService):
         self.text_splitter = CharacterTextSplitter(chunk_size=500, chunk_overlap=150, separator="\n")
         self.MIN_CHUNKS = 5
 
-        self.system_message = {'role': 'system', 'content': """You are a helpful assistant. 
+        self.system_message = {'role': 'system', 'content': """You are a helpful file and web assistant. 
         Do not make up the answer. If you don't know the answer, tell about it.
         Answer on the same language as the question."""}
 
         self.template = """{question}
         ---
-        File context: {context_file}"""
+        Additional context: {context}"""
 
 
         self.messages = []
@@ -40,6 +41,7 @@ class TransformersAIService(AbstractAIService):
             api_key=os.environ.get('MODEL_API_KEY'),
             base_url="https://openrouter.ai/api/v1",
         )
+        self.websearch_tool= DuckDuckGoSearchRun()
     
 
     def clear_chat_memory(self):
@@ -72,17 +74,22 @@ class TransformersAIService(AbstractAIService):
 
         return results
     
-    def _prompt_creating(self, query: str, context: List[str]):
-        context_str = " ".join(context)
+    def _web_search(self, query: str):
+        return self.websearch_tool.invoke(query)
+
+    def _prompt_creating(self, query: str, context_file: List[str], context_web: str):
+        context = " ".join(context_file)
+        context += "\n\n" + context_web
         template = PromptTemplate(
             template=self.template,
-            input_variables=["question", "context_file", "context_web"]
+            input_variables=["question", "context"]
         )
-        prompt = template.format(context=context_str, question=query)
+        prompt = template.format(question=query, context=context)
         return prompt
 
     def question_answering(self, query: str, doc_text: List[str]):
-        prompt = self._prompt_creating(query, doc_text)
+        web_results = self._web_search(query)
+        prompt = self._prompt_creating(query, doc_text, web_results)
 
         self.messages.append({'role': 'user', 'content': prompt})
 

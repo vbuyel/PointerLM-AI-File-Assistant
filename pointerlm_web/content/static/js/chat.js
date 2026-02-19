@@ -13,8 +13,8 @@ const themeToggle = document.querySelector("#theme-toggle-btn");
 
 
 let controller, typingInterval;
-const API_URL = `https://vbuyel.github.io/`;
-// const API_URL = `http://127.0.0.1:8000/`;
+// const API_URL = `https://vbuyel.github.io/`;
+const API_URL = `http://127.0.0.1:8000/`;
 
 const userData = { message: "", file: null };
 
