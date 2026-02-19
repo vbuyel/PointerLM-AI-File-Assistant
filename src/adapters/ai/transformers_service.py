@@ -97,7 +97,7 @@ class TransformersAIService(AbstractAIService):
             model=self.MODEL_ID,
             messages=self.messages,
             temperature=0.7,
-            max_tokens=1024,
+            max_tokens=512,
         )
         
         # with OpenRouter(api_key=os.environ.get("MODEL_API_KEY")) as client:
