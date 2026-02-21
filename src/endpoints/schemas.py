@@ -9,6 +9,11 @@ class User:
         email: EmailStr
         password: str
 
+    class Info(BaseModel):
+        username: str
+        email: EmailStr
+
+
 class Request:
     class WithFile:
         text: str

@@ -54,7 +54,7 @@ async def delete_user_endpoint(current_user=Depends(get_current_user)):
     await loop.run_in_executor(None, bus.handle, command)
     return bus.result
 
-@router.get("/info", status_code=status.HTTP_200_OK)
+@router.get("/info", status_code=status.HTTP_200_OK, response_model=User.Info)
 async def get_user_info(current_user=Depends(get_current_user)):
     if current_user is None:
         raise ensure.UserSessionIsOut
