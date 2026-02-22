@@ -1,3 +1,5 @@
+const API_URL = `https://transudative-santo-hurtless.ngrok-free.dev/`;
+
 const accountData = document.querySelector(".account-data");
 const historyData = accountData.querySelector(".history");
 const infoData = accountData.querySelector(".info");
@@ -45,14 +47,14 @@ accountDataBtn.addEventListener("click", async () => {
         const response_history = await fetch(API_URL + `response/history`, {
             method: "GET",
             headers: {
-                "Authorization": `Bearer ${token}`
+                "Authorization": `Bearer ${token}`,
+                "ngrok-skip-browser-warning": "true"
             },
         });
+        const response_history_data = await response_history.json();
 
-        const historyDataJson = await response_history.json();
-
-        for (let i = 0; i < historyDataJson.history.length; i++) {
-            historyItems[i].textContent = historyDataJson.history[i];
+        for (let i = 0; i < response_history_data.history.length; i++) {
+            historyItems[i].textContent = response_history_data.history[i];
         }
 
         accountData.classList.add("active");

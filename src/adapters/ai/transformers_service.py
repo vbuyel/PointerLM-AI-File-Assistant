@@ -27,7 +27,8 @@ class TransformersAIService(AbstractAIService):
         self.MIN_CHUNKS = 5
 
         self.system_message = {'role': 'system', 'content': """You are a helpful file and web assistant. 
-        Do not make up the answer. If you don't know the answer, tell about it.
+        Do not make up the answer. If you can answer on this question without using additional content, do it. 
+        Owerwise, use the additional content to answer the question.
         Answer on the same language as the question."""}
 
         self.template = """{question}
