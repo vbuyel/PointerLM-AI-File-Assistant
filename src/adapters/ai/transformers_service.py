@@ -101,11 +101,5 @@ class TransformersAIService(AbstractAIService):
             max_tokens=512,
         )
         
-        # with OpenRouter(api_key=os.environ.get("MODEL_API_KEY")) as client:
-        #     response = client.chat.send(
-        #         model=self.MODEL_ID,
-        #         messages=self.messages,
-        #     )
-        
         self.messages.append({'role': 'assistant', 'content': response.choices[0].message.content})
         return response.choices[0].message.content
