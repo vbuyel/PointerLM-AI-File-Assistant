@@ -9,7 +9,7 @@ An intelligent AI assistant that answers questions about uploaded files using Re
 - **Web Search Integration**: DuckDuckGo search for up-to-date information
 - **Conversational Memory**: Chat history with sliding window (keeps last 10 responses)
 - **User Authentication**: JWT-based auth with signup/login/delete flows
-- **CQRS Architecture**: Clean separation of Commands and Events via MessageBus
+- **Command–Handler Architecture**: Commands and Events routed through a synchronous MessageBus
 
 ## Tech Stack
 
@@ -30,12 +30,12 @@ PointerLM-AI-File-Assistant/
 ├── requirements.txt           # Python dependencies
 ├── src/
 │   ├── adapters/             # External integrations
-│   │   ├── ai/               # AI services (transformers_service.py)
+│   │   ├── ai/               # AI services (abstract base + transformers_service.py)
 │   │   ├── orm/              # SQLAlchemy ORM (conn.py, tables.py)
 │   │   ├── oauth2.py         # JWT token handling
 │   │   ├── repository.py     # Data access layer
 │   │   ├── security.py       # Password hashing
-│   │   └── ensure.py         # Custom exceptions
+│   │   └── ensure.py         # Custom HTTP exceptions + validation helpers
 │   ├── domain/               # Core business logic
 │   │   ├── model.py          # Entities (User, Response, Prompt)
 │   │   ├── commands.py       # Command definitions
@@ -50,7 +50,7 @@ PointerLM-AI-File-Assistant/
 │   │   ├── messagebus.py     # CQRS message bus
 │   │   └── unit_of_work.py   # Database transactions
 │   └── bootstrap.py          # Dependency injection setup
-├── content/                  # Static/dynamic content
+├── content/                  # Reserved for file uploads / static assets
 │   ├── static/
 │   └── dynamic/
 └── .env                      # Environment variables (gitignored)
@@ -61,33 +61,33 @@ PointerLM-AI-File-Assistant/
 ```
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
 │  Endpoints  │────▶│  MessageBus │────▶│  Handlers   │
-│  (FastAPI)  │     │   (CQRS)    │     │ (Service)  │
+│  (FastAPI)  │     │  (CQRS-ish) │     │  (Service)  │
 └─────────────┘     └─────────────┘     └─────────────┘
                                               │
-                   ┌──────────────────────────┼──────────────────────────┐
-                   ▼                          ▼                          ▼
-            ┌─────────────┐          ┌─────────────┐           ┌─────────────┐
-            │  UnitOfWork │          │ AIService   │           │    Events   │
-            │  (SQLAlch)  │          │ (RAG+LLM)  │           │  (Async)   │
-            └─────────────┘          └─────────────┘           └─────────────┘
+                    ┌─────────────────────────┼─────────────────────────┐
+                    ▼                         ▼                         ▼
+             ┌─────────────┐          ┌─────────────┐          ┌─────────────┐
+             │  UnitOfWork │          │  AIService  │          │    Events   │
+             │  (SQLAlch)  │          │  (RAG+LLM)  │          │    (Sync)   │
+             └─────────────┘          └─────────────┘          └─────────────┘
 ```
 
 ### Request Flow (Generate Response)
 
-1. `POST /response/generate` → Command created
-2. `MessageBus.handle()` → Routes to `GenerateResponse` handler
-3. Handler calls `AIService.get_context_from_file()`:
+1. `POST /response/generate` → `Command.GenerateResponse` created
+2. `MessageBus.handle()` → routes to `generate_response` handler
+3. If a file was uploaded, handler calls `AIService.get_context_from_file()`:
    - File loaded via `UnstructuredLoader`
    - Text split into chunks (500 chars, 150 overlap)
-   - Embeddings via `all-MiniLM-L6-v2`
-   - Top-k chunks retrieved via FAISS similarity
+   - Embeddings via `all-MiniLM-L6-v2` (SentenceTransformer)
+   - Top-k chunks retrieved via FAISS (L2 distance)
 4. Handler calls `AIService.question_answering()`:
-   - Web search via DuckDuckGo
-   - Prompt constructed with context
-   - OpenRouter API call to Trinity Large
-   - Response cached in chat memory
-5. Response persisted to PostgreSQL (if authenticated)
-6. Old responses pruned (keeps last 10)
+   - Web search via DuckDuckGo (`langchain_community`)
+   - Prompt constructed with file context + web results
+   - OpenRouter API call to `arcee-ai/trinity-large-preview:free`
+   - Response appended to in-memory chat history (sliding window)
+5. If user is authenticated: `Response` entity created → event `ResponseGenerated` queued synchronously → handler persists to PostgreSQL
+6. Old DB responses pruned (keeps newest 10 per user)
 
 ## API Endpoints
 
@@ -167,10 +167,17 @@ The `TransformersAIService` implements `AbstractAIService`:
 
 ```python
 # src/adapters/ai/ai_service.py
-class AbstractAIService:
-    def get_context_from_file(self, query: str, file_path: str) -> List[str]: ...
-    def question_answering(self, query: str, doc_text: List[str]) -> str: ...
-    def clear_chat_memory(self) -> None: ...
+from abc import ABC, abstractmethod
+
+class AbstractAIService(ABC):
+    @abstractmethod
+    def get_context_from_file(self, query: str, file_path: str): ...
+
+    @abstractmethod
+    def question_answering(self, query: str, docsearch): ...
+
+    @abstractmethod
+    def clear_chat_memory(self): ...
 ```
 
 To swap the LLM, modify `transformers_service.py`:
@@ -230,7 +237,3 @@ Adjust retrieval in line 27:
 ```python
 self.MIN_CHUNKS = 5  # More chunks = more context, higher latency
 ```
-
-## License
-
-[MIT](LICENSE)
