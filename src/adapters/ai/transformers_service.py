@@ -9,8 +9,6 @@ from langchain_text_splitters import CharacterTextSplitter
 
 from openai import OpenAI
 from langchain_community.tools import DuckDuckGoSearchRun
-# from openrouter import OpenRouter
-# from langchain.messages import AIMessage, HumanMessage, SystemMessage
 
 import faiss
 import numpy as np

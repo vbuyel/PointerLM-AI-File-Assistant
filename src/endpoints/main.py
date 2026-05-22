@@ -10,7 +10,6 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        # "https://vbuyel.github.io/"
         "*"
     ],
     allow_credentials=True,

@@ -28,9 +28,3 @@ while True:
         print("Error connecting to DataBase", e)
         time.sleep(2)
 
-# def get_db():
-#     db = SessionLocal()
-#     try:
-#         yield db
-#     finally:
-#         db.close()

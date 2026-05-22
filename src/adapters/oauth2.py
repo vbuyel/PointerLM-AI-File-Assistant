@@ -32,12 +32,10 @@ def is_verified_access_token(token: str, credentials_exception):
         id: str = payload.get("id")
         email: str = payload.get("email")
         if id is None or email is None:
-            # raise credentials_exception
             return None
 
         token_data = id
     except InvalidTokenError:
-        # raise credentials_exception
         return None
     
     return token_data

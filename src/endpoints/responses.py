@@ -69,8 +69,3 @@ async def clear_chat_history():
         raise ensure.FailedToDelete
     return {"deleted": "successfully"}
 
-# @router.delete("/delete/{response_id}")
-# async def delete_response_endpoint(response_id: int, current_user=Depends(get_current_user)):
-#     command = Command.DeleteResponse(response_id=response_id)
-#     await bus.handle(command)
-#     return bus.result
