@@ -61,7 +61,7 @@ class TransformersAIService(AbstractAIService):
         embedded_chunks = np.array(self.file_preprocessing_model.encode(chunks))
         embedded_query = np.array(self.file_preprocessing_model.encode([query]))
 
-        index = faiss.IndexFlatL2(len(self.file_preprocessing_model.encode("test text")))
+        index = faiss.IndexFlatIP(len(self.file_preprocessing_model.encode("test text")))
         index.add(embedded_chunks)
 
         k = min(self.MIN_CHUNKS, len(embedded_chunks))
